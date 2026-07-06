@@ -40,6 +40,7 @@ POST_TARGETS = [
 ]
 
 # ─── file_id видео (добавь на Render после получения) ────────────────────────
+VIDEO_URL = "https://t.me/posting2283933/2"
 VIDEO_FILE_ID = os.environ.get("VIDEO_FILE_ID", "")
 
 # ─── Автоответ ────────────────────────────────────────────────────────────────
@@ -86,11 +87,23 @@ async def save_to_kb(title, body, tag="Входящие"):
         return False
 
 async def do_post(client):
+    # Сначала скачиваем видео из канала
+    video_msg = None
+    try:
+        video_msg = await client.get_messages("posting2283933", ids=2)
+    except Exception as e:
+        log.warning(f"Could not get video: {e}")
+
     for chat, topic_id in POST_TARGETS:
         try:
             kwargs = {"reply_to": topic_id} if topic_id else {}
-            if VIDEO_FILE_ID:
-                await client.send_file(chat, file=VIDEO_FILE_ID, caption=POST_TEXT, **kwargs)
+            if video_msg and video_msg.media:
+                await client.send_file(
+                    chat,
+                    file=video_msg.media,
+                    caption=POST_TEXT,
+                    **kwargs
+                )
             else:
                 await client.send_message(chat, POST_TEXT, **kwargs)
             log.info(f"Posted to {chat} topic={topic_id}")
